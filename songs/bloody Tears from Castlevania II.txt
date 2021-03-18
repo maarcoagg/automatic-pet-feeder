@@ -1,9 +1,6 @@
 /* 
   Bloody Tears from Castlevania II
   Connect a piezo buzzer or speaker to pin 11 or select a new pin.
-  More songs available at https://github.com/robsoncouto/arduino-songs                                            
-                                              
-                                              Robson Couto, 2019
 */
 
 #define NOTE_B0  31

@@ -105,7 +105,7 @@ LiquidCrystal lcd(rs, rw, en, d4, d5, d6, d7);
 static uint32_t time_stamp = 0;
 
 /** SERVO VARIABLES **/
-const int servoPin = 9;    // Servo to digital pin 9 
+const int servoPin = 9;
 const int closeCan = 130;  // Closed angle in degrees
 const int openCan = 10;    // Open angle in degrees
 const int feedingTimeOpen = 700;  // Feeding time in ms, MAX = 1000
@@ -113,14 +113,12 @@ const int feedingTimeClose = 1000;// Feeding time close in ms
 const int detachTime = 4000;
 boolean feeded = false;     // Used to correct time after feeding
 
-/** CLOCK VARIABLES **/
-int h=7;    // Initial hour
-int m=59;   // Initial minute
-int s=50;   // Initial second
-int hs=11;  // pin 11 for Hours Setting Button
-int ms=12;  // pin 12 for Minutes Setting Button
-int button1;
-int button2;
+/** CLOCK VARIABLES - Start with time set to 07:59:50 **/
+int h=7; 
+int m=59;   
+int s=50;   
+int hourBtnPin=11;  // pin 11 for Hours Setting Button
+int minuteBtnPin=12;  // pin 12 for Minutes Setting Button
 static uint32_t last_time, now = 0; // RTC
 
 /** BUZZER PIN **/
@@ -133,7 +131,7 @@ const PROGMEM int melody[] = {
   NOTE_A4, 4,    
   NOTE_A4, 4,
   NOTE_F4, 6,
-  NOTE_C5, 16                                                                                                                                        ,
+  NOTE_C5, 16,
   NOTE_A4, 4,
   NOTE_F4, 6,
   NOTE_C5, 16,
@@ -146,25 +144,23 @@ int divider = 0, noteDuration = 0;
 Servo myservo;
 
 void setup() {
-  // Serial
   Serial.begin(9600);
-  // Servo
+  now=millis();
+  // --- Servo ---
   myservo.attach(servoPin);
   myservo.write(closeCan); // Start feeder closed
   delay(1000);
   myservo.detach();
-  // Clock - read RTC initial value
-  now=millis();
-  // Buzzer
-  pinMode(buzzerPin, OUTPUT); // Set buzzer - pin 8 as an output
+  // --- Buzzer ---
+  pinMode(buzzerPin, OUTPUT);
   tone(buzzerPin, 220, 100);
-  // Buttons
-  pinMode(hs,INPUT_PULLUP);// avoid external Pullup resistors for Button 1
-  pinMode(ms,INPUT_PULLUP);// and Button 2
-  // LCD
+  // --- Buttons ---
+  pinMode(hourBtnPin,INPUT_PULLUP);
+  pinMode(minuteBtnPin,INPUT_PULLUP);
+  // --- LCD ---
   pinMode(backLight, OUTPUT);
   lcd_backlight_on();
-  lcd.begin(16,2);              // columns, rows.  use 16,2 for a 16x2 LCD, etc.
+  lcd.begin(16,2);
   lcd_intro();
 }
 
@@ -176,19 +172,7 @@ void loop() {
 }
 
 void feed(){
-  if (is_time(0,0,0)) {
-    lcd_backlight_on();
-    time_stamp = millis();
-    play_music();
-    feed_dog();
-  }  
-  else if (is_time(8,0,0)) {
-    lcd_backlight_on();
-    time_stamp = millis();
-    play_music();
-    feed_dog();
-  }    
-  else if (is_time(16,0,0)) {
+  if (is_time(0,0,0) || is_time(8,0,0) || is_time(16,0,0)) {
     lcd_backlight_on();
     time_stamp = millis();
     play_music();
@@ -256,40 +240,39 @@ void count_time(){
 }
 
 void wait(int t){
-  for(int i = 0; i < 5; i ++){
-    while ((now-last_time)<200) //delay200ms
-    {
+  for(int i = 0; i < 5; i ++) {
+    while ((now-last_time)<200) {
       now=millis();
     }
-  last_time=now; 
-  
-  // read Setting Buttons
-  button1=digitalRead(hs);// Read Buttons
-  button2=digitalRead(ms);
+    last_time=now; 
+    
+    int hourBtn=digitalRead(hourBtnPin);
+    int minuteBtn=digitalRead(minuteBtnPin);
 
-  if(button1==0){
-    lcd_backlight_on();
-    time_stamp = millis();
-    h=h+1;
-  }
-  if(button2==0){
-    lcd_backlight_on();
-    time_stamp = millis();
-    s=0;
-    m=m+1;
-  }
-  
-  if(s==60){
-    s=0;
-    m=m+1;
-  }
-  if(m==60)
-  {
-    m=0;
-    h=h+1;
-  }
-  if(h==24)
-    h=0;
+    if(hourBtn==0){
+      lcd_backlight_on();
+      time_stamp = millis();
+      h=h+1;
+    }
+    
+    if(minuteBtn==0){
+      lcd_backlight_on();
+      time_stamp = millis();
+      s=0;
+      m=m+1;
+    }
+    
+    if(s==60){
+      s=0;
+      m=m+1;
+    }
+    if(m==60)
+    {
+      m=0;
+      h=h+1;
+    }
+    if(h==24)
+      h=0;
   }
   // Desliga backlight após 15 segundos
   if(millis()-time_stamp>15000){
